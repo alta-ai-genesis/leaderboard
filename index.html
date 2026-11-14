@@ -301,10 +301,16 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     fetch(CSV_URL + (CSV_URL.indexOf("?") > -1 ? "&" : "?") + "t=" + Date.now(), {cache:"no-store"})
       .then(function(r){ if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function(text){
-        var rows = parseCSV(text).slice(1).filter(function(c){ return c[0] && c[0].trim(); });
+        var all = parseCSV(text), head = (all[0] || []).map(function(h){ return String(h).trim().toLowerCase(); });
+        function col(name){ return head.indexOf(name.toLowerCase()); }
+        function g(c, name){ var i = col(name); return i > -1 ? c[i] : ""; }
+        var rows = all.slice(1).filter(function(c){ return c[0] && c[0].trim(); });
         state.students = rows.map(function(c){
-          var q4 = [c[6],c[7],c[8],c[9]].map(num);
-          return {name:c[0].trim(), city:(c[1]||"").trim(), att:[c[2],c[3],c[4],c[5]].map(num), quiz:q4, hw:[c[10],c[11],c[12],c[13]].map(num), project:num(c[14]), li:num(c[15])?1:0, ig:num(c[16])?1:0};
+          return {name:c[0].trim(), city:String(g(c,"City")||"").trim(),
+            att:["Att L1","Att L2","Att L3","Att L4"].map(function(h){ return num(g(c,h)); }),
+            quiz:["Quiz L1","Quiz L2","Quiz L3","Quiz L4"].map(function(h){ return num(g(c,h)); }),
+            hw:["HW L1","HW L2","HW L3","HW L4"].map(function(h){ return num(g(c,h)); }),
+            project:num(g(c,"Project")), li:num(g(c,"LinkedIn"))?1:0, ig:num(g(c,"Instagram"))?1:0};
         });
         state.stage = state.students.length ? "Live" : "Starting soon";
         state.updated = new Date().toISOString();
