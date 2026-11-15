@@ -177,9 +177,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     <div class="card">
       <span class="eyebrow">Good to know</span>
       <ul class="notes">
-        <li>Scores update after every live level: Sat 14, Sat 21, Wed 25 and Sat 28 Nov.</li>
+        <li>Every submission is verified. The leaderboard for each level is finalised by the day after the session.</li>
         <li>Final ranks are announced live on Sat, 5 Dec at 6 PM.</li>
-        <li>Tie? Final project score, then homework, then quiz average decide the rank.</li>
+        <li>Same score? The student who submitted first ranks higher.</li>
         <li>Prizes stack down the ladder: the top 5 also get merch, a scholarship and an LoR.</li>
         <li><b>Attending all 4 live sessions is mandatory to win any reward.</b></li>
         <li>Name missing or spelt wrong? Message the AI Genesis team on WhatsApp.</li>
@@ -218,9 +218,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   }
   function ranked(){
     var list = state.students.map(function(s){ var p = parts(s); var t = p.project+p.homework+p.quiz+p.attendance+p.social; return {s:s,p:p,total:Math.round(t*10)/10}; });
-    list.sort(function(a,b){ return b.total-a.total || b.p._p-a.p._p || b.p._hw-a.p._hw || b.p._q-a.p._q || String(a.s.name).localeCompare(String(b.s.name)); });
-    var r = 0, prev = null;
-    list.forEach(function(x,i){ var key = [x.total,x.p._p,x.p._hw,x.p._q].join("|"); if (key !== prev) r = i+1; prev = key; x.rank = r; });
+    var big = 1e15;
+    list.sort(function(a,b){ return b.total-a.total || ((a.s.first==null?big:a.s.first)-(b.s.first==null?big:b.s.first)) || String(a.s.name).localeCompare(String(b.s.name)); });
+    list.forEach(function(x,i){ x.rank = i+1; });
     return list;
   }
   function tier(r){ if (r===1) return ["PS5 + GTA 6","c1"]; if (r<=5) return ["AI subscription","c5"]; if (r<=10) return ["Alta merch","c10"]; if (r<=25) return ["Scholarship + LoR","c50"]; if (r<=50) return ["LoR","c50"]; return null; }
@@ -310,7 +310,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
             att:["Att L1","Att L2","Att L3","Att L4"].map(function(h){ return num(g(c,h)); }),
             quiz:["Quiz L1","Quiz L2","Quiz L3","Quiz L4"].map(function(h){ return num(g(c,h)); }),
             hw:["HW L1","HW L2","HW L3","HW L4"].map(function(h){ return num(g(c,h)); }),
-            project:num(g(c,"Project")), li:num(g(c,"LinkedIn"))?1:0, ig:num(g(c,"Instagram"))?1:0};
+            project:num(g(c,"Project")), li:num(g(c,"LinkedIn"))?1:0, ig:num(g(c,"Instagram"))?1:0, first:num(g(c,"First"))};
         });
         state.stage = state.students.length ? "Live" : "Starting soon";
         state.updated = new Date().toISOString();
