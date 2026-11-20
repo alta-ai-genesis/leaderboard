@@ -133,6 +133,31 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   .status{align-items:flex-start}
   th.bk,td.bk{display:none}
 }
+
+.nmbtn{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.nmbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:4px}
+.nmbtn b{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--cyan) 55%,transparent);text-underline-offset:3px}
+.nmbtn .chev{font-size:12px;color:var(--cyan);font-weight:600}
+tr.open td{background:color-mix(in srgb,var(--cyan) 7%,transparent)}
+tr.drow td{padding:0 0 14px 0;background:color-mix(in srgb,var(--cyan) 7%,transparent)}
+.detail{padding:6px 14px 4px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lv{background:#fff;border:1px solid rgba(13,30,86,.12);border-radius:12px;padding:12px 14px}
+.lv.wide{margin-top:10px}
+.lv.soon{opacity:.55}
+.lv h4{margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#3A4767}
+.li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0;border-top:1px dashed rgba(13,30,86,.10)}
+.li:first-of-type{border-top:0}
+.li small{flex-basis:100%;color:#5a6684;font-size:12.5px;line-height:1.35}
+.li .pts{margin-left:auto;font-weight:700;font-size:13px;white-space:nowrap}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.chip.ok{background:#DDF6EE;color:#16946F}
+.chip.no{background:#FDE7E7;color:#B42318}
+.chip.na{background:#EEF2FA;color:#3A4767}
+.muted{color:#5a6684;font-size:13px;margin:0}
+.dtot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 14px;background:#0D1E56;color:#fff;border-radius:12px}
+.dtot b{font-size:18px}
+.dhelp{font-size:12px;color:#5a6684;margin:8px 2px 0}
 </style>
 </head>
 <body>
@@ -244,6 +269,39 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   function bar(p){
     var b = el("div","bar"); ["project","homework","quiz","attendance","social"].forEach(function(k){ var sp = el("span"); sp.style.width = (p[k])+"%"; sp.style.background = COLORS[k]; sp.title = LABELS[k][0]+": "+p[k].toFixed(1)+" / "+W[k]; b.appendChild(sp); }); return b;
   }
+  var OPEN = {};
+  function levelLive(i){ return state.students.some(function(s){ var a = arr4(s.att); return a[i] === 1; }); }
+  function chip(ok, txt){ return el("span", "chip " + (ok ? "ok" : (ok === null ? "na" : "no")), txt); }
+  function detail(x){
+    var s = x.s, p = x.p, att = arr4(s.att), q = arr4(s.quiz), hw = arr4(s.hw), notes = s.hwNote || [];
+    var box = el("div","detail");
+    var g = el("div","dgrid");
+    ["Level 1","Level 2","Level 3","Level 4"].forEach(function(L, i){
+      var card = el("div","lv");
+      var live = levelLive(i);
+      card.appendChild(el("h4", null, L));
+      if (!live){ card.classList.add("soon"); card.appendChild(el("p","muted","Not started yet")); g.appendChild(card); return; }
+      var a = att[i] === 1, qp = q[i], h = hw[i] == null ? 0 : hw[i];
+      var r1 = el("div","li"); r1.appendChild(chip(a, a ? "Present" : "Absent")); r1.appendChild(el("span","pts", (a ? 2.5 : 0).toFixed(1) + " / 2.5"));
+      r1.appendChild(el("small", null, a ? "Quiz filled during the live session" : "Quiz was not filled during the live session")); card.appendChild(r1);
+      var r2 = el("div","li"); r2.appendChild(chip(qp != null && qp > 0 ? true : false, "Quiz " + (qp == null ? "–" : qp + "%"))); r2.appendChild(el("span","pts", ((qp||0)/100*2.5).toFixed(1) + " / 2.5")); card.appendChild(r2);
+      var hn = notes[i] || "";
+      var r3 = el("div","li"); r3.appendChild(chip(h >= 10 ? true : (h > 0 ? null : false), "Homework " + h + "/10")); r3.appendChild(el("span","pts", (h/10*6.25).toFixed(1) + " / 6.3"));
+      r3.appendChild(el("small", null, hn || (h >= 10 ? "Submitted on time with a working link" : "Not submitted before the deadline, or the link didn't work"))); card.appendChild(r3);
+      g.appendChild(card);
+    });
+    box.appendChild(g);
+    var so = el("div","lv wide"); so.appendChild(el("h4", null, "Social"));
+    var rs = el("div","li"); rs.appendChild(chip(!!s.li, "LinkedIn post")); rs.appendChild(chip(!!s.ig, "Instagram follow")); rs.appendChild(el("span","pts", p.social.toFixed(1) + " / 5"));
+    rs.appendChild(el("small", null, s.socNote ? s.socNote : (s.li && s.ig ? "LinkedIn post about the session + following @aigenesis.challenge" : "Needs both a LinkedIn post about the session and a follow on @aigenesis.challenge"))); so.appendChild(rs);
+    box.appendChild(so);
+    var pr = el("div","lv wide"); pr.appendChild(el("h4", null, "Final project"));
+    var rp = el("div","li"); rp.appendChild(chip(s.project != null && s.project > 0 ? true : null, s.project ? s.project + "/100" : "After Level 4")); rp.appendChild(el("span","pts", p.project.toFixed(1) + " / 50")); pr.appendChild(rp);
+    box.appendChild(pr);
+    var tot = el("div","dtot"); tot.appendChild(el("span", null, "Total")); tot.appendChild(el("b", null, x.total.toFixed(1) + " / 100")); box.appendChild(tot);
+    box.appendChild(el("p","dhelp","Think something is wrong? Use the score query form shared on our WhatsApp channel."));
+    return box;
+  }
   function renderTable(list){
     var box = document.getElementById("tbl"); box.textContent = "";
     if (!list.length){
@@ -261,10 +319,17 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       shown++;
       var tr = el("tr", hit ? "hit" : "");
       var rc = el("td","rank"); if (x.rank <= 3) rc.appendChild(el("span","rb rb"+x.rank, String(x.rank))); else rc.textContent = "#"+x.rank; tr.appendChild(rc);
-      var nm = el("td","name"); nm.appendChild(el("b",null,name || "Unnamed")); if (x.s.city) nm.appendChild(el("small",null,x.s.city)); tr.appendChild(nm);
+      var nm = el("td","name"); var nb = el("button","nmbtn"); nb.type="button"; nb.appendChild(el("b",null,name || "Unnamed")); nb.appendChild(el("span","chev","View score details ▾")); nm.appendChild(nb); tr.appendChild(nm);
       var bk = el("td","bk"); bk.appendChild(bar(x.p)); tr.appendChild(bk);
       tr.appendChild(el("td","score",x.total.toFixed(1)));
       tb.appendChild(tr);
+      var key = name + "|" + x.rank;
+      var dr = el("tr","drow"); var dc = el("td"); dc.colSpan = 4; dr.appendChild(dc);
+      function openIt(){ dc.textContent = ""; dc.appendChild(detail(x)); dr.style.display = "table-row"; tr.classList.add("open"); nb.setAttribute("aria-expanded","true"); OPEN[name] = 1; }
+      function closeIt(){ dr.style.display = "none"; tr.classList.remove("open"); nb.setAttribute("aria-expanded","false"); delete OPEN[name]; }
+      nb.addEventListener("click", function(){ if (dr.style.display === "table-row") closeIt(); else openIt(); });
+      dr.style.display = "none"; tb.appendChild(dr);
+      if (OPEN[name]) openIt();
     });
     t.appendChild(tb); box.appendChild(t);
     if (q && !shown){ var e2 = el("div","empty-state"); e2.appendChild(el("b",null,"No match for “"+q+"”")); e2.appendChild(el("p",null,"Check the spelling, or message the AI Genesis team if your name is missing.")); box.appendChild(e2); }
@@ -310,7 +375,8 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
             att:["Att L1","Att L2","Att L3","Att L4"].map(function(h){ return num(g(c,h)); }),
             quiz:["Quiz L1","Quiz L2","Quiz L3","Quiz L4"].map(function(h){ return num(g(c,h)); }),
             hw:["HW L1","HW L2","HW L3","HW L4"].map(function(h){ return num(g(c,h)); }),
-            project:num(g(c,"Project")), li:num(g(c,"LinkedIn"))?1:0, ig:num(g(c,"Instagram"))?1:0, first:num(g(c,"First"))};
+            project:num(g(c,"Project")), li:num(g(c,"LinkedIn"))?1:0, ig:num(g(c,"Instagram"))?1:0, first:num(g(c,"First")),
+            hwNote:["HW note L1","HW note L2","HW note L3","HW note L4"].map(function(h){ return String(g(c,h)||"").trim(); }), socNote:String(g(c,"Social note")||"").trim()};
         });
         state.stage = state.students.length ? "Live" : "Starting soon";
         state.updated = new Date().toISOString();
